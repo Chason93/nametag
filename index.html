@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Card</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; background:#050011; }
+
+        /* ── UI 패널 ── */
+        #ui-panel {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(15,15,25,0.88); backdrop-filter: blur(14px);
+            padding: 18px; border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white; z-index: 10; width: 310px;
+            max-height: 88vh; overflow-y: auto;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+        }
+        #ui-panel::-webkit-scrollbar { width: 3px; }
+        #ui-panel::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+        /* ── 조명 패널 ── */
+        #light-panel {
+            position: absolute; bottom: 20px; right: 20px;
+            background: rgba(15,15,25,0.88); backdrop-filter: blur(14px);
+            padding: 14px 16px; border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white; z-index: 10; width: 230px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        h3 { margin: 0 0 14px; font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+        h4 { margin: 0 0 10px; font-size: 12px; color: #aaa; font-weight: 500; }
+
+        .section-title {
+            font-size: 10px; color: #888; text-transform: uppercase;
+            font-weight: 700; letter-spacing: 1px; margin: 14px 0 6px;
+        }
+
+        /* ── 셀렉트 ── */
+        select.theme-selector {
+            width: 100%; padding: 8px 10px;
+            background: rgba(255,255,255,0.07); color: white;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; font-size: 12px; cursor: pointer;
+            appearance: none; outline: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+        }
+        select.theme-selector option { background: #1a1a2e; color: white; }
+
+        /* ── 색상 칩 그리드 ── */
+        .color-chip-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 4px;
+        }
+        .color-chip {
+            width: 100%; aspect-ratio: 1; border-radius: 8px; cursor: pointer;
+            border: 2px solid transparent; transition: transform 0.15s, border-color 0.15s;
+            position: relative;
+        }
+        .color-chip:hover { transform: scale(1.1); }
+        .color-chip.active { border-color: #fff; transform: scale(1.1); }
+        .color-chip.custom-chip {
+            background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+
+        /* ── 텍스트 스타일 버튼 ── */
+        .style-btn-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 4px;
+        }
+        .style-btn {
+            padding: 7px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05); color: #ccc; font-size: 10px;
+            cursor: pointer; text-align: center; transition: all 0.15s; font-weight: 600;
+        }
+        .style-btn:hover { background: rgba(255,255,255,0.12); }
+        .style-btn.active { border-color: #fff; background: rgba(255,255,255,0.15); color: #fff; }
+
+        /* ── 폰트 버튼 ── */
+        .font-btn-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 4px;
+        }
+        .font-btn {
+            padding: 8px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05); color: #ccc; font-size: 12px;
+            cursor: pointer; text-align: center; transition: all 0.15s;
+        }
+        .font-btn:hover { background: rgba(255,255,255,0.12); }
+        .font-btn.active { border-color: #fff; background: rgba(255,255,255,0.15); color: #fff; }
+
+        /* ── 장식 버튼 ── */
+        .deco-btn-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 4px;
+        }
+        .deco-btn {
+            padding: 7px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05); color: #ccc; font-size: 10px;
+            cursor: pointer; text-align: center; transition: all 0.15s;
+        }
+        .deco-btn:hover { background: rgba(255,255,255,0.12); }
+        .deco-btn.active { border-color: #7c6fff; background: rgba(124,111,255,0.2); color: #a89fff; }
+
+        /* ── 텍스트 필드 ── */
+        .control-group {
+            background: rgba(255,255,255,0.03); padding: 10px 12px;
+            border-radius: 10px; margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .control-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+        .field-label { font-size: 11px; color: #888; font-weight: 600; }
+        .btn-remove { background: rgba(255,77,77,0.2); border: 1px solid rgba(255,77,77,0.3); color: #ff6b6b; border-radius: 5px; cursor: pointer; padding: 2px 8px; font-size: 10px; transition: background 0.2s; }
+        .btn-remove:hover { background: rgba(255,77,77,0.4); }
+
+        input[type="text"] {
+            width: 100%; padding: 7px 9px; background: rgba(0,0,0,0.3); border: 1px solid #333;
+            color: white; border-radius: 6px; margin-bottom: 7px; font-size: 13px; outline: none;
+        }
+        input[type="text"]:focus { border-color: #7c6fff; }
+
+        .align-btns { display: flex; gap: 4px; margin-bottom: 7px; }
+        .align-btn {
+            flex: 1; padding: 4px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04); color: #aaa; font-size: 13px;
+            cursor: pointer; text-align: center; transition: all 0.15s;
+        }
+        .align-btn.active { border-color: #7c6fff; background: rgba(124,111,255,0.2); color: #a89fff; }
+
+        .slider-row { display: flex; align-items: center; font-size: 11px; color: #bbb; margin-top: 5px; }
+        .slider-row label { width: 30px; text-align: left; flex-shrink: 0; }
+        .slider-val { width: 28px; text-align: right; font-size: 10px; color: #888; flex-shrink: 0; }
+        input[type="range"] {
+            flex: 1; cursor: pointer; height: 3px; background: #333; border-radius: 2px;
+            appearance: none; margin: 0 8px;
+        }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; background: #a89fff; border-radius: 50%; cursor: pointer; }
+
+        /* ── 버튼 ── */
+        .btn-action {
+            width: 100%; padding: 10px; border: none; color: white;
+            border-radius: 8px; cursor: pointer; font-weight: 700; margin-top: 5px; font-size: 13px;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn-action:hover { opacity: 0.85; }
+        .btn-action:active { transform: scale(0.98); }
+        .btn-add { background: linear-gradient(135deg, #4caf50, #2e7d32); }
+        .btn-save { background: linear-gradient(135deg, #7c6fff, #5b4de0); margin-top: 12px; }
+
+        /* ── 편집 버튼 (뷰모드) ── */
+        #edit-btn {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(255,255,255,0.1); color: white;
+            padding: 11px 28px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.25);
+            backdrop-filter: blur(8px); cursor: pointer; z-index: 20; display: none;
+            font-weight: 700; font-size: 14px; transition: background 0.3s, opacity 0.5s;
+            letter-spacing: 0.5px;
+        }
+        #edit-btn:hover { background: rgba(255,255,255,0.22); }
+
+        /* ── QR 모달 ── */
+        #qr-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.88); z-index: 100;
+            justify-content: center; align-items: center;
+            backdrop-filter: blur(8px);
+        }
+        .qr-content {
+            background: #fff; padding: 32px; border-radius: 24px;
+            text-align: center; color: #333;
+            box-shadow: 0 0 60px rgba(124,111,255,0.3); max-width: 90%;
+        }
+        .qr-content h3 { color: #111; font-size: 18px; margin-bottom: 4px; }
+        .qr-sub { font-size: 12px; color: #888; margin-bottom: 16px; }
+        #qr-code { margin: 0 auto; }
+        .qr-url {
+            margin-top: 14px; padding: 8px 12px; background: #f5f5f5;
+            border-radius: 8px; font-size: 11px; color: #555;
+            word-break: break-all; max-width: 240px; margin-left: auto; margin-right: auto;
+        }
+        .close-qr {
+            margin-top: 16px; padding: 10px 28px; background: #222; color: white;
+            border: none; border-radius: 30px; cursor: pointer; font-weight: 700; font-size: 14px;
+        }
+
+        /* ── 커스텀 색상 모달 ── */
+        #color-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 200;
+            justify-content: center; align-items: center; backdrop-filter: blur(6px);
+        }
+        .color-modal-content {
+            background: #1a1a2e; padding: 24px; border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.15); color: white; text-align: center;
+        }
+        .color-modal-content h4 { margin: 0 0 14px; font-size: 14px; }
+        #custom-color-picker { width: 180px; height: 180px; border: none; cursor: pointer; border-radius: 10px; }
+        .color-modal-btns { display: flex; gap: 8px; margin-top: 14px; justify-content: center; }
+        .color-modal-btns button {
+            padding: 8px 20px; border-radius: 20px; border: none; cursor: pointer; font-weight: 700; font-size: 13px;
+        }
+        .btn-confirm { background: #7c6fff; color: white; }
+        .btn-cancel-color { background: #333; color: #ccc; }
+
+        /* ── 툴팁 ── */
+        .tooltip {
+            position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,0.18); font-size: 10px; pointer-events: none;
+            animation: fadeIO 4s infinite; letter-spacing: 2px; white-space: nowrap;
+        }
+        @keyframes fadeIO { 0%,100%{opacity:0.1} 50%{opacity:0.5} }
+
+        /* ── 로켓 런치 오버레이 ── */
+        #launch-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50; pointer-events: none; overflow: hidden;
+        }
+        #launch-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <canvas id="launch-canvas"></canvas>
+
+    <div class="tooltip">DRAG TO ROTATE · SCROLL TO ZOOM</div>
+
+    <!-- QR 모달 -->
+    <div id="qr-modal">
+        <div class="qr-content">
+            <h3>Share Your Card</h3>
+            <div class="qr-sub">QR코드를 스캔하면 3D 명함이 열립니다</div>
+            <div id="qr-code"></div>
+            <div class="qr-url" id="qr-url-text"></div>
+            <button class="close-qr" onclick="closeQR()">닫기</button>
+        </div>
+    </div>
+
+    <!-- 커스텀 색상 모달 -->
+    <div id="color-modal">
+        <div class="color-modal-content">
+            <h4>카드 색상 직접 설정</h4>
+            <input type="color" id="custom-color-picker" value="#ffffff">
+            <div class="color-modal-btns">
+                <button class="btn-confirm" onclick="applyCustomColor()">적용</button>
+                <button class="btn-cancel-color" onclick="document.getElementById('color-modal').style.display='none'">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 에디터 UI -->
+    <div id="ui-panel">
+        <h3>✦ Infinity Card</h3>
+
+        <div class="section-title">카드 색상</div>
+        <div class="color-chip-grid" id="color-chips"></div>
+
+        <div class="section-title">텍스트 스타일</div>
+        <div class="style-btn-grid" id="style-btns"></div>
+
+        <div class="section-title">폰트</div>
+        <div class="font-btn-grid" id="font-btns"></div>
+
+        <div class="section-title">장식 요소</div>
+        <div class="deco-btn-grid" id="deco-btns"></div>
+
+        <div class="section-title">질감 깊이</div>
+        <div class="slider-row" style="margin-bottom:6px;">
+            <label>깊이</label>
+            <input type="range" min="0" max="100" value="40" oninput="updateTextureStrength(this.value); this.nextElementSibling.textContent=this.value">
+            <span class="slider-val">40</span>
+        </div>
+
+        <div class="section-title">텍스트 필드</div>
+        <div id="fields-container"></div>
+        <button class="btn-action btn-add" onclick="addNewField()">+ 텍스트 추가</button>
+        <button class="btn-action btn-save" onclick="generateQR()">📲 QR 코드 생성</button>
+    </div>
+
+    <!-- 조명 패널 -->
+    <div id="light-panel">
+        <h4>Studio Lighting</h4>
+        <div class="slider-row">
+            <label>배경</label>
+            <input type="range" min="0" max="100" value="30" oninput="updateAmbientLight(this.value); this.nextElementSibling.textContent=this.value">
+            <span class="slider-val">30</span>
+        </div>
+        <div class="slider-row">
+            <label>광량</label>
+            <input type="range" min="0" max="100" value="60" oninput="updateAllLights(this.value); this.nextElementSibling.textContent=this.value">
+            <span class="slider-val">60</span>
+        </div>
+        <div class="slider-row">
+            <label>블룸</label>
+            <input type="range" min="0" max="100" value="30" oninput="updateBloom(this.value); this.nextElementSibling.textContent=this.value">
+            <span class="slider-val">30</span>
+        </div>
+    </div>
+
+    <button id="edit-btn" onclick="goToEditMode()">⚙️ 편집하기</button>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // ═══════════════════════════════════════════
+        //  1. 상수 & 데이터 정의
+        // ═══════════════════════════════════════════
+        const PAPER_THEMES = {
+            bone_white:    { color: 0xfbf9f5, roughness: 0.9,  metalness: 0.0,  label: 'Bone White' },
+            matte_black:   { color: 0x151515, roughness: 0.8,  metalness: 0.1,  label: 'Matte Black' },
+            navy:          { color: 0x0d1b2a, roughness: 0.85, metalness: 0.0,  label: 'Navy' },
+            warm_grey:     { color: 0x88807b, roughness: 1.0,  metalness: 0.0,  label: 'Warm Grey' },
+            metallic_gold: { color: 0xc8a96e, roughness: 0.25, metalness: 0.85, label: 'Gold' },
+            rose_gold:     { color: 0xc4927a, roughness: 0.3,  metalness: 0.8,  label: 'Rose Gold' },
+            forest:        { color: 0x1b3a2d, roughness: 0.9,  metalness: 0.0,  label: 'Forest' },
+            lavender:      { color: 0x3b2a5a, roughness: 0.8,  metalness: 0.05, label: 'Lavender' },
+            custom:        { color: 0xffffff, roughness: 0.8,  metalness: 0.0,  label: '✦' }
+        };
+        const THEME_CHIP_COLORS = {
+            bone_white: '#f5f2ec', matte_black: '#1a1a1a', navy: '#0d1b2a',
+            warm_grey: '#88807b', metallic_gold: '#c8a96e', rose_gold: '#c4927a',
+            forest: '#1b3a2d', lavender: '#3b2a5a', custom: null
+        };
+        const TEXT_STYLES = {
+            black_ink:    { color: 0x111111, roughness: 0.8, metalness: 0.1,  emissive: 0x000000, label: '흑잉크', hex: '#111111' },
+            white_ink:    { color: 0xffffff, roughness: 0.8, metalness: 0.1,  emissive: 0x000000, label: '백잉크', hex: '#ffffff' },
+            gold_foil:    { color: 0xffd700, roughness: 0.15,metalness: 1.0,  emissive: 0x221100, label: '금박',   hex: '#ffd700' },
+            silver_foil:  { color: 0xe8e8e8, roughness: 0.15,metalness: 1.0,  emissive: 0x222222, label: '은박',   hex: '#e8e8e8' },
+            rose_foil:    { color: 0xe8a0a0, roughness: 0.15,metalness: 1.0,  emissive: 0x220011, label: '로즈',   hex: '#e8a0a0' },
+            navy_ink:     { color: 0x1a3560, roughness: 0.8, metalness: 0.05, emissive: 0x000000, label: '네이비', hex: '#1a3560' }
+        };
+        const FONTS = {
+            batang:       { family: "'Batang', 'Times New Roman', serif",      label: '바탕체' },
+            noto_serif:   { family: "'Noto Serif KR', serif",                  label: '노토명조' },
+            noto_sans:    { family: "'Noto Sans KR', sans-serif",               label: '노토고딕' },
+            gowun:        { family: "'Gowun Batang', serif",                    label: '고운바탕' },
+            black_han:    { family: "'Black Han Sans', sans-serif",             label: '블랙한산' },
+            gothic:       { family: "'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif", label: '고딕' }
+        };
+        const DECOS = {
+            border:      { label: '테두리', icon: '▭' },
+            corner_mark: { label: '코너',   icon: '✦' },
+            dot_pattern: { label: '도트',   icon: '⠿' },
+            h_line:      { label: '구분선', icon: '—' }
+        };
+
+        // ═══════════════════════════════════════════
+        //  2. 상태
+        // ═══════════════════════════════════════════
+        const params = new URLSearchParams(window.location.search);
+        const defaultState = {
+            theme: 'bone_white', customColor: null,
+            textStyle: 'black_ink', font: 'batang',
+            textureStrength: 0.02, decos: [],
+            texts: [
+                { id: 1, text: '홍 길 동', size: 90, x: 512, y: 250, align: 'center' },
+                { id: 2, text: 'Creative Director', size: 30, x: 512, y: 330, align: 'center' },
+                { id: 3, text: '010-1234-5678', size: 28, x: 512, y: 480, align: 'center' }
+            ]
+        };
+        let currentState = JSON.parse(JSON.stringify(defaultState));
+        if (params.get('data')) {
+            try { currentState = JSON.parse(decodeURIComponent(escape(atob(params.get('data'))))); } catch(e) {}
+        }
+        const isView = params.get('mode') === 'view';
+
+        // ═══════════════════════════════════════════
+        //  3. Three.js 설정
+        // ═══════════════════════════════════════════
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050011);
+        scene.fog = new THREE.FogExp2(0x050011, 0.018);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0.8, 5.5);
+        scene.add(camera);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; controls.enablePan = false;
+        controls.minDistance = 2; controls.maxDistance = 12;
+
+        // ═══════════════════════════════════════════
+        //  4. 우주 배경
+        // ═══════════════════════════════════════════
+        function createSmokeTexture() {
+            const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+            const ctx = c.getContext('2d');
+            const g = ctx.createRadialGradient(64,64,0,64,64,64);
+            g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.4,'rgba(255,255,255,0.3)'); g.addColorStop(1,'rgba(255,255,255,0)');
+            ctx.fillStyle = g; ctx.fillRect(0,0,128,128);
+            return new THREE.CanvasTexture(c);
+        }
+        const smokeTexture = createSmokeTexture();
+        const bgGroup = new THREE.Group(); camera.add(bgGroup);
+        const cloudParticles = [];
+        const cloudColors = [0x5500ff, 0x0044ff, 0xff00aa, 0x00aaff, 0x4400cc];
+        for (let i = 0; i < 18; i++) {
+            const mat = new THREE.MeshLambertMaterial({ map: smokeTexture, transparent: true, opacity: 0.25, color: cloudColors[i % cloudColors.length], depthWrite: false });
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), mat);
+            mesh.position.set((Math.random()-0.5)*22, (Math.random()-0.5)*14, -22-Math.random()*6);
+            mesh.rotation.z = Math.random()*Math.PI*2;
+            bgGroup.add(mesh); cloudParticles.push(mesh);
+        }
+        const bgLight = new THREE.PointLight(0x0044ff, 1.8, 60);
+        bgLight.position.set(0, 5, -10); bgGroup.add(bgLight);
+
+        // 별 파티클
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 800;
+        const starPos = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i++) starPos[i] = (Math.random()-0.5) * 80;
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, transparent: true, opacity: 0.6 });
+        scene.add(new THREE.Points(starGeo, starMat));
+
+        // ═══════════════════════════════════════════
+        //  5. 명함 텍스처 생성
+        // ═══════════════════════════════════════════
+        function createLaidPaperTexture() {
+            const w = 1024, h = 1024;
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#808080'; ctx.fillRect(0,0,w,h);
+            ctx.globalAlpha = 0.12; ctx.fillStyle = '#fff';
+            for (let i = 0; i < 7000; i++) ctx.fillRect(Math.random()*w, Math.random()*h, 20+Math.random()*90, 1+Math.random()*2);
+            ctx.fillStyle = '#000';
+            for (let i = 0; i < 3500; i++) ctx.fillRect(Math.random()*w, Math.random()*h, 20+Math.random()*90, 1);
+            ctx.globalAlpha = 1;
+            const img = ctx.getImageData(0,0,w,h);
+            for (let i = 0; i < img.data.length; i += 4) { const n = (Math.random()-0.5)*18; img.data[i]+=n; img.data[i+1]+=n; img.data[i+2]+=n; }
+            ctx.putImageData(img, 0, 0);
+            const tex = new THREE.CanvasTexture(c);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            return { texture: tex, canvas: c };
+        }
+        const paperData = createLaidPaperTexture();
+
+        // ═══════════════════════════════════════════
+        //  6. 조명
+        // ═══════════════════════════════════════════
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3); scene.add(ambientLight);
+        const lightTR = new THREE.DirectionalLight(0xffffff, 0.8); lightTR.position.set(5,5,5); lightTR.castShadow = true; scene.add(lightTR);
+        const lightTL = new THREE.DirectionalLight(0xeef0ff, 0.5); lightTL.position.set(-5,5,5); scene.add(lightTL);
+        const lightBR = new THREE.DirectionalLight(0xffeedd, 0.4); lightBR.position.set(5,-5,5); scene.add(lightBR);
+        const lightBL = new THREE.DirectionalLight(0xeef0ff, 0.3); lightBL.position.set(-5,-5,5); scene.add(lightBL);
+        const mouseLight = new THREE.PointLight(0xffaa55, 0.5, 8); mouseLight.position.set(0,0,3); scene.add(mouseLight);
+
+        // ═══════════════════════════════════════════
+        //  7. 포스트 프로세싱
+        // ═══════════════════════════════════════════
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.2; bloomPass.strength = 0.3; bloomPass.radius = 0.5;
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene); composer.addPass(bloomPass);
+
+        // ═══════════════════════════════════════════
+        //  8. 명함 3D 객체
+        // ═══════════════════════════════════════════
+        const cardGroup = new THREE.Group(); scene.add(cardGroup);
+
+        const bumpCanvas = document.createElement('canvas');
+        bumpCanvas.width = 1024; bumpCanvas.height = 585;
+        const bumpCtx = bumpCanvas.getContext('2d');
+        const bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+
+        let cardMaterial = new THREE.MeshStandardMaterial({
+            color: 0xfbf9f5, roughness: 0.9, roughnessMap: paperData.texture,
+            bumpMap: bumpTexture, bumpScale: 0.02, metalness: 0.0
+        });
+        const cardBody = new THREE.Mesh(new RoundedBoxGeometry(3.5, 2, 0.025, 10, 0.04), cardMaterial);
+        cardBody.castShadow = true; cardBody.receiveShadow = true;
+        cardGroup.add(cardBody);
+
+        // 텍스트 레이어
+        const textCanvas = document.createElement('canvas');
+        textCanvas.width = 1024; textCanvas.height = 585;
+        const textCtx = textCanvas.getContext('2d');
+        const textTexture = new THREE.CanvasTexture(textCanvas);
+        let textMaterial = new THREE.MeshStandardMaterial({
+            transparent: true, side: THREE.DoubleSide,
+            color: 0x111111, roughness: 0.8, metalness: 0.1, emissive: new THREE.Color(0x000000),
+            map: textTexture, alphaMap: textTexture
+        });
+        const textMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 2), textMaterial);
+        textMesh.position.z = 0.013; cardGroup.add(textMesh);
+
+        // ═══════════════════════════════════════════
+        //  9. 캔버스 드로우 (텍스트 + 장식)
+        // ═══════════════════════════════════════════
+        function drawCanvas() {
+            const W = 1024, H = 585;
+            textCtx.clearRect(0,0,W,H);
+            bumpCtx.drawImage(paperData.canvas, 0, 0, W, H);
+
+            const fontFamily = FONTS[currentState.font]?.family || FONTS.batang.family;
+
+            // 장식 요소
+            const decos = currentState.decos || [];
+            if (decos.includes('border')) {
+                textCtx.strokeStyle = 'rgba(255,255,255,0.85)';
+                textCtx.lineWidth = 8;
+                textCtx.strokeRect(28, 18, W-56, H-36);
+            }
+            if (decos.includes('corner_mark')) {
+                const marks = [[60,50],[W-60,50],[60,H-50],[W-60,H-50]];
+                textCtx.fillStyle = 'rgba(255,255,255,0.7)';
+                textCtx.font = `bold 28px sans-serif`;
+                textCtx.textAlign = 'center';
+                marks.forEach(([x,y]) => textCtx.fillText('✦', x, y));
+            }
+            if (decos.includes('dot_pattern')) {
+                textCtx.fillStyle = 'rgba(255,255,255,0.12)';
+                for (let x = 40; x < W; x += 28) for (let y = 28; y < H; y += 28) {
+                    textCtx.beginPath(); textCtx.arc(x, y, 1.5, 0, Math.PI*2); textCtx.fill();
+                }
+            }
+            if (decos.includes('h_line')) {
+                const midY = H * 0.55;
+                textCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+                textCtx.lineWidth = 1.5;
+                textCtx.beginPath();
+                textCtx.moveTo(60, midY); textCtx.lineTo(W-60, midY);
+                textCtx.stroke();
+            }
+
+            // 텍스트
+            currentState.texts.forEach(t => {
+                const fontStr = `bold ${t.size}px ${fontFamily}`;
+                const align = t.align || 'center';
+                textCtx.font = fontStr;
+                textCtx.textAlign = align;
+                textCtx.fillStyle = '#ffffff';
+                const xPos = align === 'left' ? t.x - 400 : align === 'right' ? t.x + 400 : t.x;
+                textCtx.fillText(t.text, xPos, t.y);
+
+                bumpCtx.font = fontStr; bumpCtx.textAlign = align;
+                bumpCtx.fillStyle = 'rgba(0,0,0,0.5)';
+                bumpCtx.fillText(t.text, xPos, t.y);
+            });
+
+            textTexture.needsUpdate = true; bumpTexture.needsUpdate = true;
+        }
+
+        // ═══════════════════════════════════════════
+        //  10. 제어 함수
+        // ═══════════════════════════════════════════
+        function applyTheme(key, customHex) {
+            const t = PAPER_THEMES[key];
+            if (!t) return;
+            const color = (key === 'custom' && customHex) ? parseInt(customHex.replace('#',''), 16) : t.color;
+            cardMaterial.color.setHex(color);
+            cardMaterial.roughness = t.roughness;
+            cardMaterial.metalness = t.metalness;
+        }
+        function applyTextStyle(key) {
+            const t = TEXT_STYLES[key]; if (!t) return;
+            textMaterial.color.setHex(t.color);
+            textMaterial.roughness = t.roughness;
+            textMaterial.metalness = t.metalness;
+            textMaterial.emissive.setHex(t.emissive);
+        }
+
+        window.changeTheme = (key) => {
+            currentState.theme = key;
+            if (key === 'custom') { document.getElementById('color-modal').style.display='flex'; return; }
+            applyTheme(key);
+            renderChips();
+        };
+        window.applyCustomColor = () => {
+            const hex = document.getElementById('custom-color-picker').value;
+            currentState.customColor = hex;
+            applyTheme('custom', hex);
+            document.getElementById('color-modal').style.display = 'none';
+            renderChips();
+        };
+        window.changeTextStyle = (key) => {
+            currentState.textStyle = key;
+            applyTextStyle(key);
+            renderStyleBtns();
+        };
+        window.changeFont = (key) => {
+            currentState.font = key;
+            renderFontBtns(); drawCanvas();
+        };
+        window.toggleDeco = (key) => {
+            const d = currentState.decos || [];
+            const i = d.indexOf(key);
+            if (i === -1) d.push(key); else d.splice(i, 1);
+            currentState.decos = d;
+            renderDecoBtns(); drawCanvas();
+        };
+        window.updateAmbientLight = (v) => { ambientLight.intensity = v/100; };
+        window.updateAllLights = (v) => { const b=v/80; lightTR.intensity=b*0.8; lightTL.intensity=b*0.5; lightBR.intensity=b*0.4; lightBL.intensity=b*0.3; mouseLight.intensity=b*0.5; };
+        window.updateBloom = (v) => { bloomPass.strength = v/100; };
+        window.updateTextureStrength = (v) => { currentState.textureStrength = v/2000; cardMaterial.bumpScale = currentState.textureStrength; };
+        window.addNewField = () => { currentState.texts.push({id:Date.now(), text:'텍스트', size:30, x:512, y:300, align:'center'}); renderFields(); drawCanvas(); };
+        window.removeField = (id) => { currentState.texts = currentState.texts.filter(t=>t.id!==id); renderFields(); drawCanvas(); };
+        window.updateField = (id,k,v) => { const t=currentState.texts.find(i=>i.id===id); if(t){if(k!=='text'&&k!=='align')v=Number(v); t[k]=v; drawCanvas(); }};
+
+        // ═══════════════════════════════════════════
+        //  11. UI 렌더링
+        // ═══════════════════════════════════════════
+        function renderChips() {
+            const grid = document.getElementById('color-chips');
+            grid.innerHTML = '';
+            Object.entries(PAPER_THEMES).forEach(([key, theme]) => {
+                const chip = document.createElement('div');
+                chip.className = 'color-chip' + (currentState.theme === key ? ' active' : '');
+                chip.title = theme.label;
+                if (key === 'custom') {
+                    chip.classList.add('custom-chip');
+                    if (currentState.customColor && currentState.theme === 'custom') {
+                        chip.style.background = currentState.customColor;
+                        chip.style.backgroundImage = 'none';
+                    }
+                } else {
+                    chip.style.background = THEME_CHIP_COLORS[key];
+                    if (key === 'bone_white') chip.style.border = '2px solid #ccc';
+                }
+                chip.onclick = () => window.changeTheme(key);
+                grid.appendChild(chip);
+            });
+        }
+        function renderStyleBtns() {
+            const grid = document.getElementById('style-btns');
+            grid.innerHTML = '';
+            Object.entries(TEXT_STYLES).forEach(([key, s]) => {
+                const btn = document.createElement('div');
+                btn.className = 'style-btn' + (currentState.textStyle === key ? ' active' : '');
+                btn.style.color = s.hex;
+                btn.textContent = s.label;
+                btn.onclick = () => window.changeTextStyle(key);
+                grid.appendChild(btn);
+            });
+        }
+        function renderFontBtns() {
+            const grid = document.getElementById('font-btns');
+            grid.innerHTML = '';
+            Object.entries(FONTS).forEach(([key, f]) => {
+                const btn = document.createElement('div');
+                btn.className = 'font-btn' + (currentState.font === key ? ' active' : '');
+                btn.style.fontFamily = f.family;
+                btn.textContent = f.label;
+                btn.onclick = () => window.changeFont(key);
+                grid.appendChild(btn);
+            });
+        }
+        function renderDecoBtns() {
+            const grid = document.getElementById('deco-btns');
+            grid.innerHTML = '';
+            Object.entries(DECOS).forEach(([key, d]) => {
+                const btn = document.createElement('div');
+                const active = (currentState.decos||[]).includes(key);
+                btn.className = 'deco-btn' + (active ? ' active' : '');
+                btn.innerHTML = `<div style="font-size:15px">${d.icon}</div><div>${d.label}</div>`;
+                btn.onclick = () => window.toggleDeco(key);
+                grid.appendChild(btn);
+            });
+        }
+        function renderFields() {
+            const container = document.getElementById('fields-container');
+            container.innerHTML = '';
+            currentState.texts.forEach((t, i) => {
+                const d = document.createElement('div'); d.className = 'control-group';
+                d.innerHTML = `
+                <div class="control-header">
+                    <span class="field-label">L${i+1}</span>
+                    <button class="btn-remove" onclick="removeField(${t.id})">Del</button>
+                </div>
+                <input type="text" value="${t.text.replace(/"/g,'&quot;')}" oninput="updateField(${t.id},'text',this.value)">
+                <div class="align-btns">
+                    <div class="align-btn${t.align==='left'?' active':''}" onclick="updateField(${t.id},'align','left');this.parentNode.querySelectorAll('.align-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">◀ 좌</div>
+                    <div class="align-btn${(t.align||'center')==='center'?' active':''}" onclick="updateField(${t.id},'align','center');this.parentNode.querySelectorAll('.align-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">— 중</div>
+                    <div class="align-btn${t.align==='right'?' active':''}" onclick="updateField(${t.id},'align','right');this.parentNode.querySelectorAll('.align-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">우 ▶</div>
+                </div>
+                <div class="slider-row"><label>크기</label><input type="range" min="10" max="200" value="${t.size}" oninput="updateField(${t.id},'size',this.value);this.nextElementSibling.textContent=this.value"><span class="slider-val">${t.size}</span></div>
+                <div class="slider-row"><label>X</label><input type="range" min="0" max="1024" value="${t.x}" oninput="updateField(${t.id},'x',this.value);this.nextElementSibling.textContent=this.value"><span class="slider-val">${t.x}</span></div>
+                <div class="slider-row"><label>Y</label><input type="range" min="20" max="560" value="${t.y}" oninput="updateField(${t.id},'y',this.value);this.nextElementSibling.textContent=this.value"><span class="slider-val">${t.y}</span></div>`;
+                container.appendChild(d);
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        //  12. QR 생성
+        // ═══════════════════════════════════════════
+        window.generateQR = () => {
+            const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(currentState))));
+            const url = `${window.location.origin}${window.location.pathname}?mode=view&data=${encoded}`;
+            const qrContainer = document.getElementById('qr-code');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, { text: url, width: 200, height: 200, colorDark:'#000', colorLight:'#fff', correctLevel: QRCode.CorrectLevel.L });
+            const short = url.length > 60 ? url.substring(0, 60) + '…' : url;
+            document.getElementById('qr-url-text').textContent = short;
+            document.getElementById('qr-modal').style.display = 'flex';
+        };
+        window.closeQR = () => { document.getElementById('qr-modal').style.display = 'none'; };
+        window.goToEditMode = () => { window.location.href = window.location.pathname + '?data=' + params.get('data'); };
+
+        // ═══════════════════════════════════════════
+        //  13. 로켓 발사 애니메이션
+        // ═══════════════════════════════════════════
+        function isMobile() { return window.innerWidth <= 768; }
+
+        const launchCanvas = document.getElementById('launch-canvas');
+        const lctx = launchCanvas.getContext('2d');
+        let launchActive = false;
+        let launchPhase = 0; // 0=대기, 1=카운트다운, 2=발사, 3=궤도진입, 4=완료
+        let launchT = 0;
+        let particles = [];
+        let cardScreenY = window.innerHeight + 200; // 초기위치 (화면 아래)
+        let cardTargetY = 0;
+        let launchBloom = 0;
+
+        function resizeLaunchCanvas() {
+            launchCanvas.width = window.innerWidth;
+            launchCanvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type;
+                this.life = 1.0;
+                if (type === 'fire') {
+                    this.vx = (Math.random()-0.5)*4;
+                    this.vy = Math.random()*6 + 2;
+                    this.size = Math.random()*8 + 3;
+                    this.color = `hsl(${Math.random()*40+10},100%,${50+Math.random()*30}%)`;
+                } else if (type === 'smoke') {
+                    this.vx = (Math.random()-0.5)*3;
+                    this.vy = Math.random()*3 + 1;
+                    this.size = Math.random()*20 + 8;
+                    this.color = `rgba(180,180,200,`;
+                } else if (type === 'spark') {
+                    this.vx = (Math.random()-0.5)*12;
+                    this.vy = Math.random()*10 + 4;
+                    this.size = Math.random()*3 + 1;
+                    this.color = `hsl(${Math.random()*60},100%,80%)`;
+                } else if (type === 'star') {
+                    this.vx = (Math.random()-0.5)*2;
+                    this.vy = -Math.random()*1 - 0.5;
+                    this.size = Math.random()*2 + 0.5;
+                    this.x = Math.random()*window.innerWidth;
+                    this.y = Math.random()*window.innerHeight;
+                    this.life = Math.random();
+                    this.color = `rgba(255,255,255,`;
+                }
+            }
+            update(dt) {
+                this.x += this.vx * dt * 60;
+                this.y += this.vy * dt * 60;
+                this.life -= dt * (this.type === 'star' ? 0.3 : this.type === 'smoke' ? 0.7 : 1.8);
+                if (this.type === 'fire' || this.type === 'smoke') this.size += dt * 30;
+            }
+            draw(ctx) {
+                if (this.life <= 0) return;
+                ctx.save();
+                if (this.type === 'fire') {
+                    ctx.globalAlpha = this.life * 0.9;
+                    ctx.fillStyle = this.color;
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+                } else if (this.type === 'smoke') {
+                    ctx.globalAlpha = this.life * 0.25;
+                    ctx.fillStyle = this.color + this.life*0.4 + ')';
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+                } else if (this.type === 'spark') {
+                    ctx.globalAlpha = this.life;
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = this.size;
+                    ctx.shadowColor = this.color; ctx.shadowBlur = 6;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y); ctx.lineTo(this.x - this.vx*3, this.y - this.vy*3);
+                    ctx.stroke();
+                } else if (this.type === 'star') {
+                    ctx.globalAlpha = this.life * 0.8;
+                    ctx.fillStyle = this.color + this.life*0.8 + ')';
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        // 속도 흐릿한 선들 (스피드 라인)
+        let speedLines = [];
+        function spawnSpeedLines(count) {
+            speedLines = [];
+            for (let i = 0; i < count; i++) {
+                speedLines.push({
+                    x: Math.random()*window.innerWidth,
+                    y: Math.random()*window.innerHeight,
+                    len: Math.random()*80 + 20,
+                    speed: Math.random()*400 + 200,
+                    alpha: Math.random()*0.6 + 0.2,
+                    life: Math.random()
+                });
+            }
+        }
+
+        let lastLaunchTime = 0;
+        function animateLaunch(ts) {
+            if (!launchActive) return;
+            const dt = Math.min((ts - lastLaunchTime) / 1000, 0.05);
+            lastLaunchTime = ts;
+            launchT += dt;
+
+            resizeLaunchCanvas();
+            lctx.clearRect(0,0,launchCanvas.width,launchCanvas.height);
+
+            const cx = window.innerWidth / 2;
+
+            if (launchPhase === 1) {
+                // 카운트다운: 명함이 화면 하단 밖에 있음, 배경에 진동
+                const progress = launchT / 1.5;
+                launchBloom += dt * 0.3;
+
+                // 배경 빛 펄스
+                const pulse = Math.sin(launchT * 12) * 0.3 + 0.5;
+                const grad = lctx.createRadialGradient(cx, window.innerHeight, 0, cx, window.innerHeight, 300 + progress*200);
+                grad.addColorStop(0, `rgba(120,80,255,${0.3*pulse*progress})`);
+                grad.addColorStop(0.5, `rgba(60,0,180,${0.15*pulse*progress})`);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                lctx.fillStyle = grad;
+                lctx.fillRect(0,0,launchCanvas.width,launchCanvas.height);
+
+                // 파이어 파티클 예열
+                if (Math.random() < progress * 0.4) {
+                    particles.push(new Particle(cx+(Math.random()-0.5)*60, window.innerHeight+20, 'fire'));
+                    particles.push(new Particle(cx+(Math.random()-0.5)*40, window.innerHeight+20, 'smoke'));
+                }
+
+                if (launchT > 1.5) { launchPhase = 2; launchT = 0; spawnSpeedLines(40); }
+            }
+
+            if (launchPhase === 2) {
+                // 발사!
+                const progress = Math.min(launchT / 1.2, 1);
+                const eased = 1 - Math.pow(1-progress, 3); // ease-out cubic
+                cardScreenY = window.innerHeight * 1.3 - eased * (window.innerHeight * 1.3 + window.innerHeight * 0.5);
+
+                // 스피드 라인 (화면 중앙으로 수렴)
+                speedLines.forEach(l => {
+                    l.life -= dt * 2;
+                    if (l.life <= 0) {
+                        l.x = Math.random()*window.innerWidth; l.y = Math.random()*window.innerHeight;
+                        l.life = Math.random()*0.5 + 0.3;
+                    }
+                    const angle = Math.atan2(window.innerHeight/2 - l.y, cx - l.x);
+                    lctx.save();
+                    lctx.globalAlpha = l.life * l.alpha * progress;
+                    lctx.strokeStyle = `rgba(180,160,255,1)`;
+                    lctx.lineWidth = 1;
+                    lctx.beginPath();
+                    lctx.moveTo(l.x, l.y);
+                    lctx.lineTo(l.x + Math.cos(angle)*l.len*progress, l.y + Math.sin(angle)*l.len*progress);
+                    lctx.stroke();
+                    lctx.restore();
+                });
+
+                // 불꽃 트레일 (명함 아래)
+                const fireY = cardScreenY + 80;
+                for (let i = 0; i < 6; i++) {
+                    particles.push(new Particle(cx+(Math.random()-0.5)*50, fireY, 'fire'));
+                    particles.push(new Particle(cx+(Math.random()-0.5)*30, fireY+10, 'spark'));
+                }
+                if (Math.random()<0.3) particles.push(new Particle(cx+(Math.random()-0.5)*80, fireY+20, 'smoke'));
+
+                // 배경 글로우
+                const glow = lctx.createRadialGradient(cx, fireY, 0, cx, fireY, 150+progress*100);
+                glow.addColorStop(0, `rgba(255,150,50,${0.5*progress})`);
+                glow.addColorStop(0.4, `rgba(180,80,255,${0.2*progress})`);
+                glow.addColorStop(1, 'rgba(0,0,0,0)');
+                lctx.fillStyle = glow;
+                lctx.fillRect(0,0,launchCanvas.width,launchCanvas.height);
+
+                if (progress >= 1) { launchPhase = 3; launchT = 0; }
+            }
+
+            if (launchPhase === 3) {
+                // 궤도 진입 — 서서히 멈추고 중앙 정착
+                const progress = Math.min(launchT / 0.8, 1);
+                const eased = progress < 0.5 ? 2*progress*progress : 1-Math.pow(-2*progress+2,2)/2; // ease-in-out
+                const startY = window.innerHeight * 0.5 * -1;
+                const targetY = window.innerHeight * 0.45;
+                cardScreenY = startY + eased * (targetY - startY);
+
+                // 나머지 불꽃 서서히 감소
+                if (Math.random() < 0.3*(1-progress)) {
+                    particles.push(new Particle(cx+(Math.random()-0.5)*30, cardScreenY+80, 'fire'));
+                }
+
+                bloomPass.strength = 0.3 + (1-progress)*1.5;
+
+                if (progress >= 1) { launchPhase = 4; launchT = 0; cardScreenY = targetY; bloomPass.strength = 0.3; }
+            }
+
+            if (launchPhase === 4) {
+                // 완료 — 3D scene 으로 전환
+                launchCanvas.style.opacity = Math.max(0, 1 - launchT*2);
+                if (launchT > 0.6) {
+                    launchActive = false;
+                    launchCanvas.style.display = 'none';
+                    document.getElementById('edit-btn').style.opacity = '1';
+                    return;
+                }
+            }
+
+            // 파티클 업데이트 & 그리기
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => { p.update(dt); p.draw(lctx); });
+
+            // 명함 2D 그림자 & 글로우 (발사 중 overlapping 효과)
+            if (launchPhase >= 2 && launchPhase <= 3) {
+                const cardW = Math.min(window.innerWidth * 0.72, 340);
+                const cardH = cardW * (2/3.5);
+                const cardX = cx - cardW/2;
+                const cardYDraw = cardScreenY - cardH/2;
+
+                // 글로우
+                const cardGlow = lctx.createRadialGradient(cx, cardScreenY, 0, cx, cardScreenY, cardW*0.8);
+                cardGlow.addColorStop(0, 'rgba(160,140,255,0.25)');
+                cardGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                lctx.fillStyle = cardGlow;
+                lctx.fillRect(cardX - 50, cardYDraw - 50, cardW + 100, cardH + 100);
+            }
+
+            requestAnimationFrame(animateLaunch);
+        }
+
+        function startLaunchAnimation() {
+            launchCanvas.style.display = 'block';
+            launchCanvas.style.opacity = '1';
+            launchActive = true;
+            launchPhase = 1;
+            launchT = 0;
+            particles = [];
+            cardScreenY = window.innerHeight * 1.3;
+
+            // 카메라를 아래쪽에서 시작
+            camera.position.set(0, -3, 8);
+            controls.enabled = false;
+
+            // 명함도 아래에서 시작
+            cardGroup.position.y = -8;
+
+            lastLaunchTime = performance.now();
+            requestAnimationFrame(animateLaunch);
+
+            // Three.js 카메라도 같이 올라옴
+            let camT = 0;
+            function animateCam(ts) {
+                camT += 0.016;
+                const p = Math.min(camT / 2.8, 1);
+                const e = 1 - Math.pow(1-p, 3);
+                camera.position.y = -3 + e * 3.8;
+                camera.position.z = 8 - e * 2.5;
+                cardGroup.position.y = -8 + e * 8;
+                if (p < 1) requestAnimationFrame(animateCam);
+                else {
+                    camera.position.set(0, 0.8, 5.5);
+                    cardGroup.position.y = 0;
+                    controls.enabled = true;
+                }
+            }
+            setTimeout(() => requestAnimationFrame(animateCam), 400);
+        }
+
+        // ═══════════════════════════════════════════
+        //  14. 초기화
+        // ═══════════════════════════════════════════
+        applyTheme(currentState.theme, currentState.customColor);
+        applyTextStyle(currentState.textStyle || 'black_ink');
+
+        if (!isView) {
+            renderChips(); renderStyleBtns(); renderFontBtns(); renderDecoBtns(); renderFields();
+            document.getElementById('ui-panel').style.display = 'block';
+            document.getElementById('light-panel').style.display = 'block';
+            document.getElementById('edit-btn').style.display = 'none';
+            launchCanvas.style.display = 'none';
+        } else {
+            document.getElementById('ui-panel').style.display = 'none';
+            document.getElementById('light-panel').style.display = 'none';
+            document.getElementById('edit-btn').style.display = 'block';
+            document.getElementById('edit-btn').style.opacity = '0';
+            // 모바일이면 로켓 애니메이션, 데스크탑이면 페이드인
+            if (isMobile()) {
+                startLaunchAnimation();
+            } else {
+                launchCanvas.style.display = 'none';
+                document.getElementById('edit-btn').style.opacity = '1';
+            }
+        }
+        drawCanvas();
+
+        // ═══════════════════════════════════════════
+        //  15. 마우스 추적
+        // ═══════════════════════════════════════════
+        const mouse = new THREE.Vector2();
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX - window.innerWidth/2) / 200;
+            mouse.y = (e.clientY - window.innerHeight/2) / 200;
+        });
+
+        // ═══════════════════════════════════════════
+        //  16. 리사이즈
+        // ═══════════════════════════════════════════
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ═══════════════════════════════════════════
+        //  17. 애니메이션 루프
+        // ═══════════════════════════════════════════
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            mouseLight.position.x += (mouse.x * 6 - mouseLight.position.x) * 0.08;
+            mouseLight.position.y += (-mouse.y * 6 - mouseLight.position.y) * 0.08;
+            cloudParticles.forEach(p => { p.rotation.z -= 0.0008; });
+            composer.render();
+        }
+        animate();
+    </script>
+</body>
+</html>
